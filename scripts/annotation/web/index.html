@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LPM 人工事件标注器</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand-block">
+        <div class="brand-mark" aria-hidden="true">L</div>
+        <div>
+          <h1>LPM 人工事件标注器</h1>
+          <p>源字段锁定 · 上下文判读 · 追加式审计</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="annotator-chip">
+          <span>标注者</span>
+          <strong id="annotator-name">—</strong>
+        </div>
+        <button id="export-button" class="button ghost" type="button">导出快照</button>
+      </div>
+    </header>
+
+    <section class="global-bar" aria-label="全局进度">
+      <div class="global-stat">
+        <span>已验收</span>
+        <strong id="global-accepted">0</strong>
+      </div>
+      <div class="global-stat warning">
+        <span>待复核</span>
+        <strong id="global-review">0</strong>
+      </div>
+      <div class="global-stat muted">
+        <span>跳过</span>
+        <strong id="global-skipped">0</strong>
+      </div>
+      <div class="save-state" id="save-state" role="status">初始化中</div>
+    </section>
+
+    <div class="workspace">
+      <aside class="trajectory-panel" aria-label="轨迹列表">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">DATASET</span>
+            <h2>轨迹</h2>
+          </div>
+          <span id="trajectory-count" class="count-badge">0</span>
+        </div>
+        <label class="search-box">
+          <span class="sr-only">搜索轨迹</span>
+          <input id="trajectory-search" type="search" placeholder="搜索 scene / t0000" autocomplete="off" />
+        </label>
+        <label class="field compact-filter">
+          <span>显示</span>
+          <select id="trajectory-filter">
+            <option value="all">全部轨迹</option>
+            <option value="started">已开始</option>
+            <option value="unstarted">未开始</option>
+            <option value="needs_review">含待复核</option>
+          </select>
+        </label>
+        <div id="trajectory-list" class="trajectory-list" role="listbox" aria-label="轨迹"></div>
+      </aside>
+
+      <main class="event-workbench">
+        <div class="event-toolbar">
+          <div class="event-location">
+            <span id="scene-name" class="eyebrow">—</span>
+            <div class="event-title-line">
+              <h2 id="event-title">请选择事件</h2>
+              <span id="event-status-badge" class="status-badge unannotated">未标注</span>
+            </div>
+          </div>
+          <div class="navigation-controls" aria-label="事件导航">
+            <button id="previous-button" class="icon-button" type="button" aria-label="上一条">←</button>
+            <label class="event-jump">
+              <span>事件 ID</span>
+              <input id="event-id-input" type="number" min="0" inputmode="numeric" />
+            </label>
+            <button id="next-button" class="icon-button" type="button" aria-label="下一条">→</button>
+            <button id="next-unannotated-button" class="button secondary" type="button">下一未标注</button>
+          </div>
+        </div>
+
+        <div class="trajectory-progress-row">
+          <div class="progress-track" aria-label="当前轨迹进度">
+            <div id="trajectory-progress" class="progress-fill"></div>
+          </div>
+          <span id="trajectory-progress-text">0 / 0</span>
+          <label class="context-control">
+            上下文
+            <select id="context-radius">
+              <option value="8">约 17 条</option>
+              <option value="16" selected>约 33 条</option>
+              <option value="32">约 65 条</option>
+              <option value="64">约 129 条</option>
+            </select>
+          </label>
+        </div>
+
+        <section class="context-section" aria-labelledby="context-heading">
+          <div class="section-heading">
+            <div>
+              <span class="eyebrow">SEQUENCE</span>
+              <h3 id="context-heading">上下文事件流</h3>
+            </div>
+            <div class="context-heading-tools">
+              <span id="context-window-summary">显示 0 条</span>
+              <button id="source-alignment-button" class="text-button hidden" type="button">查看原始对齐</button>
+            </div>
+          </div>
+          <div id="context-list" class="context-list"></div>
+        </section>
+      </main>
+
+      <aside class="editor-panel" aria-label="标注编辑器">
+        <div class="panel-heading editor-heading">
+          <div>
+            <span class="eyebrow">ANNOTATION</span>
+            <h2>人工判定</h2>
+          </div>
+          <button id="reset-button" class="text-button" type="button">恢复基线</button>
+        </div>
+
+        <div id="lock-notice" class="lock-notice hidden">
+          <strong>源 speaker 已锁定</strong>
+          <span>直接对白的 type、action_type、agent 不允许被覆盖。</span>
+        </div>
+        <div id="stale-notice" class="stale-notice hidden">
+          当前标注基于旧版事件，请重新检查后保存。
+        </div>
+
+        <form id="annotation-form" autocomplete="off">
+          <fieldset id="normal-fields" class="editor-group">
+            <legend>事件语义</legend>
+            <div class="field">
+              <span>Type</span>
+              <div id="type-buttons" class="segmented-grid" role="radiogroup" aria-label="事件类型"></div>
+            </div>
+            <label class="field">
+              <span>Action type</span>
+              <select id="action-type-select" aria-label="Action type" disabled>
+                <option value="speak">speak</option>
+                <option value="action">action</option>
+                <option value="other">other</option>
+              </select>
+            </label>
+            <div class="field">
+              <span>Agent</span>
+              <div id="agent-picker" class="selection-field" role="group" aria-label="Agent"></div>
+            </div>
+            <div class="field">
+              <span>Target</span>
+              <div id="target-picker" class="selection-field" role="group" aria-label="Target"></div>
+            </div>
+            <div class="field">
+              <span>Participants</span>
+              <div id="participants-picker" class="selection-field" role="group" aria-label="Participants"></div>
+            </div>
+          </fieldset>
+
+          <fieldset id="choice-fields" class="editor-group hidden">
+            <legend>Choice options</legend>
+            <div id="choice-options"></div>
+          </fieldset>
+
+          <fieldset class="editor-group">
+            <legend>质量状态</legend>
+            <label class="valid-toggle">
+              <input id="valid-input" type="checkbox" checked />
+              <span class="toggle-track" aria-hidden="true"><span></span></span>
+              <span>事件可用</span>
+            </label>
+            <div class="field">
+              <span>Flags</span>
+              <div id="flag-options" class="flag-grid"></div>
+            </div>
+          </fieldset>
+
+          <fieldset class="editor-group decision-group">
+            <legend>标注结论</legend>
+            <div class="decision-buttons" role="radiogroup" aria-label="标注结论">
+              <button class="decision-button accepted active" data-status="accepted" type="button">
+                <strong>验收</strong><span>写入人工可信集</span>
+              </button>
+              <button class="decision-button needs-review" data-status="needs_review" type="button">
+                <strong>待复核</strong><span>保留问题与备注</span>
+              </button>
+              <button class="decision-button skipped" data-status="skipped" type="button">
+                <strong>跳过</strong><span>暂不作语义结论</span>
+              </button>
+            </div>
+            <label class="field">
+              <span>人工备注</span>
+              <textarea id="note-input" rows="4" placeholder="说明歧义、原始对齐或复核原因"></textarea>
+            </label>
+          </fieldset>
+
+          <div id="validation-errors" class="validation-errors hidden" role="alert"></div>
+
+          <div class="editor-actions">
+            <button id="save-button" class="button secondary" type="submit">保存</button>
+            <button id="save-next-button" class="button primary" type="button">保存并下一条</button>
+          </div>
+          <p class="shortcut-help">Ctrl/⌘+S 保存 · Ctrl/⌘+Enter 保存并下一条 · Alt+←/→ 导航</p>
+        </form>
+      </aside>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <div id="source-alignment-modal" class="modal-backdrop hidden" aria-hidden="true">
+      <section
+        class="source-alignment-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="source-alignment-title"
+      >
+        <div class="source-alignment-header">
+          <div>
+            <span class="eyebrow">OPTIONAL REFERENCE</span>
+            <h2 id="source-alignment-title">原始对齐</h2>
+          </div>
+          <button id="source-alignment-close" class="icon-button" type="button" aria-label="关闭原始对齐">×</button>
+        </div>
+        <p class="source-alignment-help">仅在说话人、译文或语义存在歧义时核对；日常标注以事件流为主。</p>
+        <div id="source-alignment-locator" class="source-locator">—</div>
+        <div id="source-alignment-content" class="alignment-content"></div>
+        <div class="source-alignment-actions">
+          <button id="source-alignment-done" class="button primary" type="button">返回标注</button>
+        </div>
+      </section>
+    </div>
+
+    <div id="preset-picker-modal" class="modal-backdrop hidden" aria-hidden="true">
+      <section
+        class="preset-picker-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="preset-picker-title"
+      >
+        <div class="preset-picker-header">
+          <div>
+            <span class="eyebrow">PRESET OPTIONS</span>
+            <h2 id="preset-picker-title">选择预制选项</h2>
+          </div>
+          <button id="preset-picker-close" class="icon-button" type="button" aria-label="关闭选项选择器">×</button>
+        </div>
+        <label class="preset-search">
+          <span class="sr-only">筛选预制选项</span>
+          <input id="preset-picker-search" type="search" placeholder="仅用于筛选，不会创建新选项" autocomplete="off" />
+        </label>
+        <div class="preset-picker-summary">
+          <span id="preset-picker-count">已选 0</span>
+          <span id="preset-picker-hint">上下文相关角色优先显示</span>
+        </div>
+        <div id="preset-picker-options" class="preset-picker-options"></div>
+        <div class="preset-picker-actions">
+          <button id="preset-picker-clear" class="button ghost-light" type="button">清空可选项</button>
+          <div>
+            <button id="preset-picker-cancel" class="button secondary" type="button">取消</button>
+            <button id="preset-picker-apply" class="button primary" type="button">应用选择</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>

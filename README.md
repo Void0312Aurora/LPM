@@ -13,3 +13,4 @@ Current entry point:
 - [docs/event_schema_zh.md](docs/event_schema_zh.md)
 - [docs/llm_cleaning_zh.md](docs/llm_cleaning_zh.md)
 - [docs/demo_passages_zh.md](docs/demo_passages_zh.md)
+- [docs/human_annotation_gui_zh.md](docs/human_annotation_gui_zh.md)

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lpm.local/schemas/human_annotation_v0.schema.json",
+  "title": "LPM Human Annotation Audit Record v0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_version",
+    "annotation_id",
+    "trajectory",
+    "event_id",
+    "source",
+    "base_sha256",
+    "revision",
+    "status",
+    "annotator",
+    "note",
+    "patch",
+    "filled_sha256",
+    "created_at"
+  ],
+  "properties": {
+    "record_version": {
+      "const": "human_annotation_v0"
+    },
+    "annotation_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "trajectory": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_id": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "source": {
+      "type": "object"
+    },
+    "base_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "accepted",
+        "needs_review",
+        "skipped"
+      ]
+    },
+    "annotator": {
+      "type": "string",
+      "minLength": 1
+    },
+    "note": {
+      "type": "string"
+    },
+    "patch": {
+      "type": "object"
+    },
+    "filled_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}
