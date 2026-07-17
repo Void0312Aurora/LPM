@@ -1,4 +1,20 @@
 .env
 
 **/__pycache__/
+**/temp/
+.venv*/
+.playwright-cli/
 
+# Local model weights.
+Models/
+
+# Reproducible inputs and generated dataset artifacts. The checked-in
+# data/demo_passages fixtures remain versioned.
+data/upstream/
+data/canonical/
+data/clean_v0/
+data/enriched/
+data/human_annotations/
+data/clean_behavior/
+data/mvp/
+data/mvp_*/

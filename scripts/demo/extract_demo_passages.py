@@ -17,7 +17,7 @@ from typing import Any
 import requests
 
 
-XI_ROOT = Path(__file__).resolve().parents[2]
+XI_ROOT = Path(__file__).resolve().parents[3]
 WORKSPACE_ROOT = XI_ROOT.parent
 DEFAULT_INPUT = XI_ROOT / "GalGame" / "data" / "tree_dialogues_v2.jsonl"
 DEFAULT_OUTPUT_DIR = XI_ROOT / "LPM" / "data" / "demo_passages"
