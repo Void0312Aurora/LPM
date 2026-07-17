@@ -78,19 +78,22 @@ $$
 
 其中 `direct_dialogue` 可由 `speaker != null` 确定性生成；`narration` 可由 `speaker == null` 确定性生成。不要使用当前 `text_type` 作为主判据。
 
+在 `clean_event_v0` 中，`type` 保留 `narration` 与 `monologue` 的结构区分。该区分不是原始数据字段；具体判定应由清洗/标注环节写入，基础构造脚本不应凭启发式擅自改写。
+
 ### 2.4 参与者与文本
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `speaker_raw` | string/null | 原始说话人 |
-| `speaker_norm` | string/null | 规范化说话人 |
+| `speaker_norm` | string/null | 去空白并执行受控异常标点归一后的说话人 |
 | `text_raw` | string/null | 原始文本 |
-| `text_norm` | string/null | 仅做空白/控制字符清理后的文本 |
+| `text_norm` | string/null | 仅做空白/控制字符清理与受控异常标点归一后的文本 |
 
 `text_norm` 不允许改写、润色、补全剧情。它只允许执行：
 
 - 去除首尾空白。
 - 删除控制字符。
+- 将明显混入的异常同义标点归一到常规标点，例如阿拉伯问号 `U+061F` 归一为 `?`。
 - 统一空字符串为 `null` 或过滤。
 
 ### 2.5 结构信息与异常
@@ -120,6 +123,8 @@ $$
 - `index_order_regression`
 - `empty_text`
 - `control_char_removed`
+- `text_punctuation_normalized`
+- `speaker_punctuation_normalized`
 - `degenerate_choice`
 - `branch_missing_target`
 - `low_frequency_speaker`
@@ -224,4 +229,3 @@ $$
 - 可构造 $E_k^c \rightarrow Y_k^c$。
 
 LLM 补充字段应独立于 canonical event，并保持闭集、可统计、可复核。
-

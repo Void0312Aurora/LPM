@@ -1,0 +1,440 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lpm.local/schemas/clean_event_v0.schema.json",
+  "title": "LPM Clean Event v0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "source",
+    "trajectory",
+    "order",
+    "kind",
+    "type",
+    "action_type",
+    "agent",
+    "target",
+    "participants",
+    "text",
+    "choice",
+    "valid",
+    "flag"
+  ],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dataset",
+        "scene",
+        "path"
+      ],
+      "properties": {
+        "dataset": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scene": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "trajectory": {
+      "type": "string",
+      "minLength": 1
+    },
+    "order": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "kind": {
+      "description": "Top-level structural event kind. Decide this before interpreting type/action_type.",
+      "type": "string",
+      "enum": [
+        "normal",
+        "choice",
+        "jump",
+        "invalid"
+      ]
+    },
+    "type": {
+      "description": "Content type for a normal event. For choice events, each option has its own type.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "utterance",
+        "action",
+        "monologue",
+        "narration",
+        "other",
+        "invalid",
+        null
+      ]
+    },
+    "action_type": {
+      "description": "Behavioral action category for modeling; use other for non-behavioral or structural events.",
+      "type": "string",
+      "enum": [
+        "speak",
+        "action",
+        "other"
+      ]
+    },
+    "agent": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "target": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "participants": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "text": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "choice": {
+      "description": "Choice payload for kind=choice; null for non-choice events. Branch targets are represented in the trajectory graph table.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "options"
+      ],
+      "properties": {
+        "options": {
+          "description": "Object keys are option indexes. Keys must be non-negative integer strings.",
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "pattern": "^(0|[1-9][0-9]*)$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "action_type",
+              "agent",
+              "target",
+              "participants",
+              "text",
+              "valid",
+              "flag"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "utterance",
+                  "action",
+                  "monologue",
+                  "narration",
+                  "other",
+                  "invalid"
+                ]
+              },
+              "action_type": {
+                "type": "string",
+                "enum": [
+                  "speak",
+                  "action",
+                  "other"
+                ]
+              },
+              "agent": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "target": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "participants": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uniqueItems": true
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "valid": {
+                "type": "boolean"
+              },
+              "flag": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uniqueItems": true
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "invalid"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "action_type": {
+                      "const": "other"
+                    },
+                    "valid": {
+                      "const": false
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "valid": {
+      "type": "boolean"
+    },
+    "flag": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "choice"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "type": "null"
+          },
+          "action_type": {
+            "const": "other"
+          },
+          "text": {
+            "type": "null"
+          },
+          "choice": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "normal",
+              "jump",
+              "invalid"
+            ]
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "choice": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "normal"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "enum": [
+              "utterance",
+              "action",
+              "monologue",
+              "narration",
+              "other"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "jump"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "type": "null"
+          },
+          "action_type": {
+            "const": "other"
+          },
+          "text": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "invalid"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "const": "invalid"
+          },
+          "action_type": {
+            "const": "other"
+          },
+          "valid": {
+            "const": false
+          }
+        }
+      }
+    }
+  ]
+}

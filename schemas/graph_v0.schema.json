@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lpm.local/schemas/graph_v0.schema.json",
+  "title": "LPM Graph v0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "nodes",
+    "edges",
+    "valid",
+    "flag"
+  ],
+  "properties": {
+    "nodes": {
+      "description": "Trajectory nodes keyed by trajectory_id.",
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scene",
+          "file",
+          "count",
+          "entry",
+          "valid",
+          "flag"
+        ],
+        "properties": {
+          "scene": {
+            "description": "Original source scene name for this internal trajectory id.",
+            "type": "string",
+            "minLength": 1
+          },
+          "file": {
+            "description": "Path to the trajectory-specific clean event JSONL file, relative to the dataset output directory.",
+            "type": "string",
+            "minLength": 1
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "entry": {
+            "description": "Entry event id for this trajectory.",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "flag": {
+            "$ref": "#/$defs/flag"
+          }
+        }
+      }
+    },
+    "edges": {
+      "description": "Directed trajectory-level edges produced by choice or jump events.",
+      "type": "object",
+      "propertyNames": {
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/edge"
+      }
+    },
+    "valid": {
+      "type": "boolean"
+    },
+    "flag": {
+      "$ref": "#/$defs/flag"
+    }
+  },
+  "$defs": {
+    "flag": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "option_index": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "source_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trajectory_id",
+        "event_id",
+        "order",
+        "option_index"
+      ],
+      "properties": {
+        "trajectory_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "event_id": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "option_index": {
+          "$ref": "#/$defs/option_index"
+        }
+      }
+    },
+    "trajectory_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "trajectory_id",
+        "event_id",
+        "order"
+      ],
+      "properties": {
+        "kind": {
+          "const": "trajectory"
+        },
+        "trajectory_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "event_id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "order": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "unresolved_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "unresolved"
+        }
+      }
+    },
+    "terminal_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "terminal"
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "edge_type",
+        "source",
+        "target",
+        "valid",
+        "flag"
+      ],
+      "properties": {
+        "edge_type": {
+          "type": "string",
+          "enum": [
+            "choice",
+            "jump"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/source_ref"
+        },
+        "target": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/trajectory_target"
+            },
+            {
+              "$ref": "#/$defs/unresolved_target"
+            },
+            {
+              "$ref": "#/$defs/terminal_target"
+            }
+          ]
+        },
+        "valid": {
+          "type": "boolean"
+        },
+        "flag": {
+          "$ref": "#/$defs/flag"
+        }
+      }
+    }
+  }
+}
