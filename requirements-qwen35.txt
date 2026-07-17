@@ -1,0 +1,19 @@
+ # Local Qwen3.5 embedding/runtime stack.
+# Torch is intentionally not pinned here: the project venv is created with
+# --system-site-packages to reuse the existing CUDA PyTorch installation.
+accelerate
+huggingface_hub
+jsonschema
+ninja
+numpy
+regex
+requests
+safetensors
+git+https://github.com/huggingface/transformers.git
+
+# Qwen3.5 linear-attention fast path.
+# In this Python 3.13 / CUDA 12.8 venv, causal-conv1d was installed with:
+#   python -m pip install --no-build-isolation causal-conv1d
+# Plain build isolation tries to install torch again during build setup.
+flash-linear-attention
+causal-conv1d
